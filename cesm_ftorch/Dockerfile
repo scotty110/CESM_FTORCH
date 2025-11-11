@@ -1,7 +1,8 @@
 FROM cesm:latest
 
 # Install dependencies
-RUN pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu124
+# RUN pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu124
+RUN pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu124
 RUN ln -s /opt/miniconda/lib/python3.11/site-packages/torch /usr/local/libtorch
 
 # Install build tools
@@ -24,17 +25,19 @@ ENV PATH=/usr/lib/ccache:$PATH \
 # Install FTorch
 WORKDIR /opt
 RUN git clone https://github.com/Cambridge-ICCS/FTorch.git /opt/FTorch
+WORKDIR /opt/FTorch
+RUN git checkout 162b6e165538ecd9649a67c8331a82ec1eb48f39
+# This specific commit works with the cmake options below.
+# Changing the FTorch version will likely require changing the cmake options.
 
-WORKDIR /opt/FTorch/src/build
+WORKDIR /opt/FTorch/build
 RUN cmake .. \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_Fortran_COMPILER=gfortran \
     -DCMAKE_C_COMPILER=gcc \
     -DCMAKE_CXX_COMPILER=g++ \
-    -DUSE_CUDA=ON \
-    -DCUDA_BIN_PATH=/usr/local/cuda/bin \
-    -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda \
-    -DCUDA_LIB_DIR=/usr/local/cuda/lib64 \
+    -DGPU_DEVICE=CUDA \
+    -DMULTI_GPU=OFF \
     -DCMAKE_PREFIX_PATH=/usr/local/libtorch \
     -DCMAKE_INSTALL_PREFIX=/usr/local/ftorch
 
